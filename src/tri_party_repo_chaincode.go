@@ -32,9 +32,9 @@ func (t *TriPartyRepoChaincode) Init(stub shim.ChaincodeStubInterface, function 
 // Invoke will be called for every transaction.
 func (t *TriPartyRepoChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 	fmt.Printf("Invoke, Entering a repo")
-	msg, _ := triparty_repo.EnterRepo(stub)
+	msg, _ := triparty_repo.EnterRepo(stub, args)
 	if msg != "" {
-		return nil, nil
+		return []byte(msg), nil
 	}
 	return nil, errors.New("No function handling")
 }
