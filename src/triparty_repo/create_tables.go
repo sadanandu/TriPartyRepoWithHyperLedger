@@ -8,6 +8,9 @@ import (
 )
 
 var myLogger = logging.MustGetLogger("triparty_repo")
+//Creates all tables required for this application. Also inserts 2 users,
+//their respective accounts and sample security in one of the accounts.
+
 func SetUpTables(stub shim.ChaincodeStubInterface) ([]byte, error){
 	var err error
 

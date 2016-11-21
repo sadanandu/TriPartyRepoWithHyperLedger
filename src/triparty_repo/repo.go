@@ -19,16 +19,21 @@ type Repo struct {
 	BuyBackDate uint64 `json:"buybackdate"`
 }
 
-
+//EnterRepo accepts a json object and converts it into Repo struct. 
+//The input in the form of json object will be helpful when calling 
+//this function from gui/web gui.
+//Can I use protobuff here instead of json object?
 func EnterRepo(stub shim.ChaincodeStubInterface, args []string) (string, error){
 	fmt.Printf("EnterRepo")
 	var err error
-	var repo Repo
+	repo := Repo{}
 	
-	err = json.Unmarshal([]byte(args[0]), &repo)
+	json.Unmarshal([]byte(args[0]), &repo)
+	fmt.Printf("Repo to be entered", repo)
 	b, _ := ValidateRepoDetails("DummySeller", 10001, 10) 
 	if b == true{
 		fmt.Printf("ValidRepo")
+		fmt.Printf(string(repo.Id))
 		_, err = stub.InsertRow("Repo", shim.Row{
 			Columns: []*shim.Column{
 				&shim.Column{Value: &shim.Column_Uint64{Uint64: repo.Id}},
@@ -43,8 +48,9 @@ func EnterRepo(stub shim.ChaincodeStubInterface, args []string) (string, error){
 		})
 		
 		if err != nil {
-			return "", errors.New("Failure in adding row to AccountSecurityLink table.")
+			return "Error inRepo", errors.New("Failure in adding row to AccountSecurityLink table.")
 		}
+		fmt.Printf("EnteredRepo")
 		return "EnteredRepo" , nil
 	}
 	return "" ,nil
