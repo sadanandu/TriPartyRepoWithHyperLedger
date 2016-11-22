@@ -45,11 +45,6 @@ func (t *TriPartyRepoChaincode) Query(stub shim.ChaincodeStubInterface, function
 	myLogger.Debugf("Query [%s]", function)
 	myLogger.Debugf("Args [%s]", args[0])
 
-    if function == "GetUserAccount"{
-	    accnumber , _ := strconv.ParseUint(args[0], 10, 64)
-		return t.GetUserAccount(stub, accnumber)
-	}
-
 	return t.GetEntity(stub, function, args[0])	
 	return nil, errors.New("Invalid query function name. Expecting 'query' but found '" + function + "'")
 }
@@ -69,37 +64,45 @@ func (t TriPartyRepoChaincode) GetEntity(stub shim.ChaincodeStubInterface, entit
 	
 	columns = append(columns, col1)
 	fmt.Printf("Getting %s", entityName)
-	row, err := stub.GetRow(entityName, columns)
-	if err != nil {
-		return nil, fmt.Errorf("Failed retrieving [%s] [%s]: [%s]",entityName, entityKey, err)
-	}
-	fmt.Printf("Row is", row)
-	if len(row.Columns) != 0 {
+	//for tables having multiple keys use GetRows else use GetRow
+	if t.TableHasMultipleKeys(stub, entityName){
+		rows, err := stub.GetRows(entityName, columns)
+		if err != nil {
+			return nil, fmt.Errorf("Failed retrieving [%s] [%s]: [%s]",entityName, entityKey, err)
+		}
+		fmt.Printf("Rows is", rows)
+		for row := range rows{
+			fmt.Printf("[%s] row",entityName, row)
+			entity := row.Columns[1].GetUint64()
+			fmt.Printf("[%s] is",entityName, entity)
+		}
+	}else{
+		row, err := stub.GetRow(entityName, columns)
+		if err != nil {
+			return nil, fmt.Errorf("Failed retrieving [%s] [%s]: [%s]",entityName, entityKey, err)
+		}
 		fmt.Printf("[%s] row",entityName, row)
 		entity := row.Columns[1].GetUint64()
 		fmt.Printf("[%s] is",entityName, entity)
 	}
+
 	return nil, nil
 }
 
 
-//How to handle tables where there are multiple keys.
-func (t TriPartyRepoChaincode) GetUserAccount(stub shim.ChaincodeStubInterface, accnumber uint64) ([]byte, error){
-    var columns []shim.Column
-	col1 := shim.Column{Value: &shim.Column_Uint64{Uint64: accnumber}}
-	columns = append(columns, col1)
-	fmt.Printf("Getting user account")
-	row, err := stub.GetRow("UserAccount", columns)
-	if err != nil {
-		return nil, fmt.Errorf("Failed retrieving user account [%d]: [%s]", accnumber, err)
+//Checking if table has multiple keys
+func (t TriPartyRepoChaincode) TableHasMultipleKeys(stub shim.ChaincodeStubInterface, tableName string) (bool){
+	table, _ := stub.GetTable(tableName)
+	counter := 0
+	for _, definition := range table.ColumnDefinitions{
+		if definition.Key{
+			counter = counter + 1 
+		}
 	}
-	if len(row.Columns) != 0 {
-		fmt.Printf("UserAccount row", row)
-		useraccount := row.Columns[1].GetUint64()
-		fmt.Printf("UserAccount is", useraccount)
+	if counter > 1{
+		return true
 	}
-	return nil, nil
-
+	return false
 }
 
 func main() {
